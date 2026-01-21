@@ -1,0 +1,7 @@
+{
+  "name": "Mestre do Fut",
+  "description": "A comprehensive football prediction and management application with neon aesthetics and real-time game tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
