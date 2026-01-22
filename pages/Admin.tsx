@@ -1,9 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query, addDoc, doc, updateDoc, deleteDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { auth, db } from '../firebase';
+import { db } from '../firebase';
 import { UserProfile, Game, Bet } from '../types';
 import { Plus, Trash2, CheckCircle, XCircle, ShieldAlert, Maximize2, Users, Wallet, RefreshCw } from 'lucide-react';
 
@@ -22,34 +20,14 @@ const CHAMPIONSHIPS = [
 ];
 
 const Admin: React.FC<AdminProps> = ({ user }) => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'games' | 'sales'>('games');
   const [newGame, setNewGame] = useState({ home: '', away: '', date: '', time: '', championship: CHAMPIONSHIPS[0] });
   const [games, setGames] = useState<Game[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
-  const [isVerifying, setIsVerifying] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      const isAuthorized = authUser && (
-        authUser.email === 'suportemestredofut@gmail.com' || 
-        user.isAdmin === true
-      );
-
-      if (isAuthorized) {
-        setIsVerifying(false);
-      } else {
-        navigate('/');
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate, user.isAdmin]);
-  
-  useEffect(() => {
-    if (isVerifying) return;
-
+    // Carregamento direto sem verificação de Auth redirecionadora
     const unsubGames = onSnapshot(query(collection(db, "games"), orderBy("date", "desc"), limit(50)), (snap) => {
       setGames(snap.docs.map(d => ({ id: d.id, ...d.data() } as Game)));
     });
@@ -57,7 +35,7 @@ const Admin: React.FC<AdminProps> = ({ user }) => {
       setBets(snap.docs.map(d => ({ id: d.id, ...d.data() } as Bet)));
     });
     return () => { unsubGames(); unsubBets(); };
-  }, [isVerifying]);
+  }, []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -87,7 +65,7 @@ const Admin: React.FC<AdminProps> = ({ user }) => {
       await addDoc(collection(db, "games"), gameData);
       setNewGame({ home: '', away: '', date: '', time: '', championship: CHAMPIONSHIPS[0] });
     } catch (e) {
-      alert("Erro ao salvar jogo.");
+      alert("Erro ao salvar jogo no Firestore.");
     }
   };
 
@@ -101,7 +79,7 @@ const Admin: React.FC<AdminProps> = ({ user }) => {
         validatedAt: new Date()
       });
     } catch (e) {
-      alert("Erro na validação. Verifique permissões.");
+      alert("Erro na validação. Certifique-se de que o Firestore está configurado.");
     } finally {
       setIsActionLoading(null);
     }
@@ -113,18 +91,6 @@ const Admin: React.FC<AdminProps> = ({ user }) => {
     }
   };
 
-  if (isVerifying) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="relative">
-          <ShieldAlert className="text-[#39FF14] animate-pulse" size={64} />
-          <div className="absolute inset-0 border-4 border-[#39FF14]/20 rounded-full animate-ping"></div>
-        </div>
-        <p className="text-slate-400 font-orbitron text-[10px] tracking-[0.5em] uppercase">Sincronizando Mestre ADM...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -133,8 +99,8 @@ const Admin: React.FC<AdminProps> = ({ user }) => {
             <ShieldAlert size={32} className="text-[#39FF14]" />
           </div>
           <div>
-            <h2 className="text-3xl font-orbitron font-bold text-[#39FF14] neon-text uppercase">Painel Central</h2>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{user.email}</p>
+            <h2 className="text-3xl font-orbitron font-bold text-[#39FF14] neon-text uppercase">Painel Central - Acesso Livre</h2>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Modo Desenvolvedor Ativo</p>
           </div>
         </div>
         
